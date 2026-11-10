@@ -1,0 +1,279 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ABSENSI SPANLUH</title>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+<style>
+*{box-sizing:border-box;font-family:Arial,sans-serif}
+body{margin:0;background:#edf4fc;color:#183153}
+header{
+background:linear-gradient(135deg,#123b70,#2479c9);
+color:white;text-align:center;padding:30px 15px;
+border-bottom:5px solid #e7b94f
+}
+header h1{
+margin:0;font-size:32px;font-weight:900;
+letter-spacing:3px;text-shadow:2px 2px 4px #00000055
+}
+header h1 span{font-weight:1000}
+header p{margin-bottom:0;color:#e2edff}
+.container{max-width:750px;margin:20px auto;padding:15px}
+.card{
+background:white;padding:20px;margin-bottom:18px;
+border-radius:15px;box-shadow:0 4px 15px #17365c15
+}
+h2{color:#174d83;margin-top:0}
+label{display:block;margin:12px 0 6px;font-weight:bold}
+input,select{
+width:100%;padding:13px;border:1px solid #cbd9e8;
+border-radius:9px;font-size:15px;background:#fbfdff
+}
+button{
+border:0;padding:11px;border-radius:9px;
+font-weight:bold;cursor:pointer;margin-top:8px
+}
+.submit{background:#1769aa;color:white;width:100%;padding:14px}
+.edit{background:#e5efff;color:#1769aa}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.stat{background:#edf5ff;padding:15px;text-align:center;border-radius:10px}
+.stat strong{display:block;font-size:25px;color:#1769aa}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{border-bottom:1px solid #e1e8f0;padding:11px 7px;text-align:left}
+th{background:#edf5ff}
+footer{text-align:center;padding:20px;color:#66809a;font-size:13px}
+#pesan{text-align:center;font-size:14px}
+</style>
+</head>
+
+<body>
+
+<header>
+<div style="font-size:42px">🏫</div>
+<h1>ABSENSI <span>SPANLUH</span></h1>
+<p>Sistem Informasi Kehadiran Siswa</p>
+</header>
+
+<div class="container">
+
+<div class="card">
+<h2>📝 Form Absensi Siswa</h2>
+
+<label>Nama Siswa</label>
+<input id="nama" type="text" placeholder="Masukkan nama siswa">
+
+<label>Kelas</label>
+<input id="kelas" type="text" placeholder="Contoh: 8A">
+
+<label>Tanggal</label>
+<input id="tanggal" type="date">
+
+<label>Status Kehadiran</label>
+<select id="status">
+<option value="Hadir">Hadir</option>
+<option value="Izin">Izin</option>
+<option value="Sakit">Sakit</option>
+<option value="Alpa">Alpa</option>
+</select>
+
+<button class="submit" id="tombol" onclick="tambahAbsensi()">
+SIMPAN ABSENSI
+</button>
+<p id="pesan"></p>
+</div>
+
+<div class="card">
+<h2>📊 Rekap Kehadiran</h2>
+<div class="stats">
+<div class="stat">Hadir<strong id="hadir">0</strong></div>
+<div class="stat">Izin<strong id="izin">0</strong></div>
+<div class="stat">Sakit<strong id="sakit">0</strong></div>
+<div class="stat">Alpa<strong id="alpa">0</strong></div>
+</div>
+</div>
+
+<div class="card">
+<h2>📋 Daftar Absensi</h2>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Nama</th>
+<th>Kelas</th>
+<th>Tanggal</th>
+<th>Status</th>
+<th>Aksi</th>
+</tr>
+</thead>
+<tbody id="daftar"></tbody>
+</table>
+</div>
+</div>
+
+</div>
+
+<footer>
+ABSENSI SPANLUH © 2026<br>
+Sistem Absensi Siswa
+</footer>
+
+<script>
+emailjs.init({
+publicKey:"2q2uw2nw2FTn2rfd9"
+});
+
+let data=JSON.parse(
+localStorage.getItem("absensi_spanluh")||"[]"
+);
+
+document.getElementById("tanggal").value=
+new Date().toLocaleDateString("en-CA");
+
+function simpan(){
+localStorage.setItem(
+"absensi_spanluh",JSON.stringify(data)
+);
+}
+
+function aman(t){
+return String(t).replace(/[&<>"']/g,c=>({
+"&":"&amp;",
+"<":"&lt;",
+">":"&gt;",
+'"':"&quot;",
+"'":"&#39;"
+}[c]));
+}
+
+async function tambahAbsensi(){
+let nama=document.getElementById("nama").value.trim();
+let kelas=document.getElementById("kelas").value.trim();
+let tanggal=document.getElementById("tanggal").value;
+let status=document.getElementById("status").value;
+
+let tombol=document.getElementById("tombol");
+let pesan=document.getElementById("pesan");
+
+if(!nama||!kelas||!tanggal){
+alert("Lengkapi semua data!");
+return;
+}
+
+tombol.disabled=true;
+tombol.textContent="MENGIRIM...";
+pesan.textContent="Mengirim laporan absensi...";
+
+try{
+await emailjs.send(
+"service_xj3lk6k",
+"template_ul7m7eh",
+{
+nama:nama,
+kelas:kelas,
+tanggal:tanggal,
+status:status
+}
+);
+
+data.push({nama,kelas,tanggal,status});
+simpan();
+tampilkan();
+
+document.getElementById("nama").value="";
+pesan.textContent="✅ Absensi berhasil disimpan dan dikirim!";
+}catch(error){
+console.error(error);
+pesan.textContent="❌ Gagal mengirim email. Periksa koneksi atau EmailJS.";
+}finally{
+tombol.disabled=false;
+tombol.textContent="SIMPAN ABSENSI";
+}
+}
+
+function editAbsensi(i){
+let item=data[i];
+
+let nama=prompt("Edit nama siswa:",item.nama);
+if(nama===null)return;
+
+let kelas=prompt("Edit kelas:",item.kelas);
+if(kelas===null)return;
+
+let tanggal=prompt("Edit tanggal (YYYY-MM-DD):",item.tanggal);
+if(tanggal===null)return;
+
+let status=prompt(
+"Status: Hadir, Izin, Sakit, atau Alpa",
+item.status
+);
+if(status===null)return;
+
+status=status.trim();
+
+if(!nama.trim()||!kelas.trim()||!tanggal.trim()||
+!["Hadir","Izin","Sakit","Alpa"].includes(status)){
+alert("Data tidak valid!");
+return;
+}
+
+let perubahan={
+nama:nama.trim(),
+kelas:kelas.trim(),
+tanggal:tanggal.trim(),
+status:status
+};
+
+emailjs.send(
+"service_xj3lk6k",
+"template_ul7m7eh",
+perubahan
+).then(()=>{
+data[i]=perubahan;
+simpan();
+tampilkan();
+alert("Data berhasil diperbarui dan laporan dikirim!");
+}).catch(()=>{
+alert("Gagal mengirim pembaruan email. Data tidak diubah.");
+});
+}
+
+function tampilkan(){
+let daftar=document.getElementById("daftar");
+daftar.innerHTML="";
+
+let jumlah={
+Hadir:0,Izin:0,Sakit:0,Alpa:0
+};
+
+data.forEach((item,i)=>{
+jumlah[item.status]++;
+
+daftar.innerHTML+=`
+<tr>
+<td>${aman(item.nama)}</td>
+<td>${aman(item.kelas)}</td>
+<td>${aman(item.tanggal)}</td>
+<td>${aman(item.status)}</td>
+<td>
+<button class="edit" onclick="editAbsensi(${i})">
+Edit
+</button>
+</td>
+</tr>`;
+});
+
+document.getElementById("hadir").textContent=jumlah.Hadir;
+document.getElementById("izin").textContent=jumlah.Izin;
+document.getElementById("sakit").textContent=jumlah.Sakit;
+document.getElementById("alpa").textContent=jumlah.Alpa;
+}
+
+tampilkan();
+</script>
+
+</body>
+</html>
